@@ -19,6 +19,12 @@ const sensorSchema = new mongoose.Schema({
   rainHour: Number,
   rainDay: Number,
   rainLive: Number,
+  rainRate: Number, // in mm/hr
+  rainAccumulation: {
+    from: Date,
+    to: Date,
+    depth: Number
+  },
   windStrength: Number,
   windAngle: Number,
   gustStrength: Number,
@@ -41,6 +47,14 @@ const schema = new mongoose.Schema({
     lon: {
       type: Number,
       required: true
+    },
+    id: {
+      type: String,
+      required: true
+    },
+    validAt: {
+      type: Date,
+      required: true
     }
   },
   extras: {
@@ -59,7 +73,7 @@ const schema = new mongoose.Schema({
 //-------------------------------------------------
 // Indexes
 //-------------------------------------------------
-schema.index({moduleId: 1}, {unique: true});
+schema.index({deviceId: 1}, {unique: true});
 
 
 //-------------------------------------------------

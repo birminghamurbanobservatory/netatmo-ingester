@@ -4,8 +4,15 @@ import {getAccessToken, getPublicData} from '../netatmo/netatmo.service';
 import * as logger from 'node-logger';
 import {calculateWindows} from '../netatmo/windows-calculator';
 import * as Promise from 'bluebird';
-import {pick} from 'lodash';
+import {pick, cloneDeep, round} from 'lodash';
 import * as check from 'check-types';
+import {ReformattedDevicePublicData} from './reformatted-device-public-data.class';
+import {ObservationClient} from './observation-client.class';
+import {v4 as uuid} from 'uuid';
+import {getLatestFromDevice, updateLatest, createLatest} from '../latest/latest.service';
+import {LatestApp} from '../latest/latest-app.class';
+import * as event from 'event-stream';
+import {calculateRainRate} from '../utils/rain.service';
 
 
 export async function ingestPublicData(credentials: Credentials, region: Region): Promise<any> {
@@ -34,10 +41,10 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
     // logger.debug(publicData);
 
-    const reformatted = reformatPublicData(publicData);
+    const reformatted: ReformattedDevicePublicData[] = reformatPublicData(publicData);
 
     // Exclude any outside of the window
-    const devices = reformatted.filter((device) => {
+    const devicesData = reformatted.filter((device) => {
       return device.location.lat <= window.north &&
         device.location.lat >= window.south &&
         device.location.lon >= window.west &&
@@ -46,10 +53,60 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
 
     // Need to loop through each device individually, checking to see if we have a latest document for it, from which we can work out if any of the sensor observations are new. If so we'll need to update the document, potentially calculating the rain-accumulation and rain-rate from the daily_accumulation, then publish any new observations to the event stream.
-    devices.forEach((device) => {
+    await Promise.mapSeries(devicesData, async (deviceData) => {
+
+      let existingLatest;
+      let observations: ObservationClient[];
+
+      try {
+        existingLatest = await getLatestFromDevice(deviceData.deviceId);
+      } catch (err) {
+        if (err.name === 'LatestNotFound') {
+          logger.debug(`deviceId '${deviceData.deviceId} does not have a latest document yet.'`);
+        } else {
+          throw err;
+        }
+      }
+
+      //------------------------
+      // Update
+      //------------------------
+      if (existingLatest) {
+
+        const {combinedLatest, updatedSensors} = combineNewDeviceDataWithExistingLatest(deviceData, existingLatest);
 
 
-      // TODO: don't forget to add a UUID if this location is new.
+        const updatedLatest = await updateLatest(deviceData.deviceId, combinedLatest);
+        // The observations should only be generated from new readings from the netatmo, therefore we need to remove any that weren't updated this time round.
+        const latestUpdatedSensorsOnly = cloneDeep(updatedLatest);
+        latestUpdatedSensorsOnly.sensors = latestUpdatedSensorsOnly.sensors.filter((latestSensor) => {
+          return Boolean(updatedSensors.find((updatedSensor) => {
+            return updatedSensor.moduleId === latestSensor.moduleId && updatedSensor.type === latestSensor.type;
+          }));
+        });
+        observations = latestToObservations(latestUpdatedSensorsOnly);
+
+
+
+      //------------------------
+      // Insert
+      //------------------------
+      } else {
+        // There's not much more we need to add to the new device data to make it a valid Latest document
+        const newLatestToInsert: any = cloneDeep(deviceData);
+        newLatestToInsert.location.id = uuid();
+        newLatestToInsert.location.validAt = new Date();
+        const insertedLatest = await createLatest(newLatestToInsert);
+        observations = latestToObservations(insertedLatest);
+
+      }
+
+      // Publish the observation(s) to the event stream
+      await Promise.mapSeries(observations, async (observation): Promise<void> => {
+        await event.publish('observation.incoming', observation);
+      });
+
+      
 
     });
 
@@ -67,12 +124,12 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 }
 
 
-export function reformatPublicData(publicData): any {
+export function reformatPublicData(publicData): ReformattedDevicePublicData[] {
   return publicData.map(reformatPublicDataSingleDevice);
 }
 
 
-export function reformatPublicDataSingleDevice(data): any {
+export function reformatPublicDataSingleDevice(data): ReformattedDevicePublicData {
 
   const reformatted = {
     deviceId: data._id,
@@ -154,5 +211,121 @@ export function reformatPublicDataSingleDevice(data): any {
   return reformatted;
 
 }
+
+
+// Checks to see if any sensor obsevations are newer and therefore need updating, and can calculate fields such as 'rainAccumulationSinceLastUpdate'.
+export function combineNewDeviceDataWithExistingLatest(newDeviceData: ReformattedDevicePublicData, existingLatest: LatestApp): {combinedLatest: LatestApp; updatedSensors: any[]} {
+
+  if (newDeviceData.deviceId !== existingLatest.deviceId) {
+    throw new Error('deviceId should match');
+  }
+
+  const updatedSensors = [];
+
+  const combined: any = {
+    deviceId: newDeviceData.deviceId,
+    sensors: []
+  };
+
+
+  const locationRemainsTheSame = existingLatest.location.lat === newDeviceData.location.lat && existingLatest.location.lon === newDeviceData.location.lon;
+
+  if (locationRemainsTheSame) {
+    combined.location = existingLatest.location;
+  } else {
+    // Location has changed
+    combined.location = {
+      lat: newDeviceData.location.lat,
+      lon: newDeviceData.location.lon,
+      id: uuid(),
+      validAt: new Date() 
+    };
+  }
+
+  // Merge the extras
+  combined.extras = Object.assign({}, existingLatest.extras, newDeviceData.extras);
+
+  newDeviceData.sensors.forEach((newSensorData) => {
+
+    let latestDataForSensor;
+
+    const previousSensorData = existingLatest.sensors.find((previousSensorData) => {
+      return previousSensorData.moduleId === newSensorData.moduleId &&
+      previousSensorData.type === newSensorData.type;
+    });
+
+    let state;
+    if (!previousSensorData) {
+      state = 'no-previous-data';
+    } else {
+      if (newSensorData.time > previousSensorData.time) {
+        state = 'overwrite-with-new-data';
+      } else {
+        state = 'reuse-old-data';
+      }
+    }
+
+    if (state === 'no-previous-data' || state === 'overwrite-with-new-data') {
+
+      latestDataForSensor = cloneDeep(newSensorData);
+
+      updatedSensors.push({
+        moduleId: newSensorData.moduleId,
+        type: newSensorData.type
+      });
+
+      // Extra processing of rain data
+      if (newSensorData.type === 'rain' && state === 'overwrite-with-new-data') {
+        
+        const timeDiffMs = newSensorData.time.getTime() - previousSensorData.time.getTime();
+        const timeDiffMin = timeDiffMs / (1000 * 60);
+
+        // It would be wrong to try calculating an accumulation if the previous data was from ages ago
+        if (timeDiffMin < 30) {
+
+          // The following should account for the new data being on a different day.
+          const depth = newSensorData.rainDay >= previousSensorData.rainDay ? 
+            round(newSensorData.rainDay - previousSensorData.rainDay, 3) : 
+            newSensorData.rainDay;
+
+          const rainAccumulation = {
+            from: previousSensorData.time,
+            to: newSensorData.time,
+            depth  
+          };
+          latestDataForSensor.rainAccumulation = rainAccumulation;
+          latestDataForSensor.rainRate = calculateRainRate(rainAccumulation.from, rainAccumulation.to, rainAccumulation.depth);
+
+        }
+      }
+    }
+
+    if (state === 'reuse-old-data') {
+      // Simply reuse the existing sensor data
+      latestDataForSensor = cloneDeep(previousSensorData);
+    } 
+
+
+    if (latestDataForSensor) {
+      combined.sensors.push(latestDataForSensor);
+    }
+
+  });
+
+  return {
+    combinedLatest: combined,
+    updatedSensors 
+  };
+
+}
+
+
+export function latestToObservations(latest): ObservationClient[] {
+
+  return [];
+
+}
+
+
 
 
