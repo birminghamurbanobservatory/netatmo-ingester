@@ -13,6 +13,8 @@ const sensorSchema = new mongoose.Schema({
     $type: Date,
     required: true
   },
+  hasBeginning: Date,
+  hasEnd: Date,
   temperature: Number,
   pressure: Number,
   humidity: Number,
@@ -20,11 +22,9 @@ const sensorSchema = new mongoose.Schema({
   rainDay: Number,
   rainLive: Number,
   rainRate: Number, // in mm/hr
-  rainAccumulation: {
-    from: Date,
-    to: Date,
-    depth: Number
-  },
+  rainAccumulation: Number,
+  // Wind measurements are averages of the last 5 minutes.
+  // Source: https://helpcenter.netatmo.com/en-us/smart-home-weather-station-and-accessories/measures-and-calibrations/how-does-the-smart-anemometer-work
   windStrength: Number,
   windAngle: Number,
   gustStrength: Number,

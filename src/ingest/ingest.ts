@@ -13,6 +13,8 @@ import {getLatestFromDevice, updateLatest, createLatest} from '../latest/latest.
 import {LatestApp} from '../latest/latest-app.class';
 import * as event from 'event-stream';
 import {calculateRainRate} from '../utils/rain.service';
+import {subMinutes} from 'date-fns';
+import {kilometrePerHourToMetresPerSecond} from '../utils/wind.service';
 
 
 export async function ingestPublicData(credentials: Credentials, region: Region): Promise<any> {
@@ -29,7 +31,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
   await Promise.mapSeries(windows, async (window, wIdx) => {
 
-    logger.debug(`Processing window ${wIdx} of ${windows.length}.`);
+    logger.debug(`Processing window ${wIdx + 1} of ${windows.length}.`);
 
     const publicData = await getPublicData({
       accessToken,
@@ -288,16 +290,22 @@ export function combineNewDeviceDataWithExistingLatest(newDeviceData: Reformatte
             round(newSensorData.rainDay - previousSensorData.rainDay, 3) : 
             newSensorData.rainDay;
 
-          const rainAccumulation = {
-            from: previousSensorData.time,
-            to: newSensorData.time,
-            depth  
-          };
-          latestDataForSensor.rainAccumulation = rainAccumulation;
-          latestDataForSensor.rainRate = calculateRainRate(rainAccumulation.from, rainAccumulation.to, rainAccumulation.depth);
+          latestDataForSensor.rainAccumulation = depth;
+          latestDataForSensor.hasBeginning = previousSensorData.time;
+          latestDataForSensor.hasEnd = newSensorData.time;
+
+          latestDataForSensor.rainRate = calculateRainRate(latestDataForSensor.hasBeginning, latestDataForSensor.hasEnd, depth);
 
         }
       }
+
+      // Extra processing of wind data
+      if (newSensorData.type === 'wind') {
+        // The wind data variables are all averages of the last 5 mins so let's use this knowledge to set the hasBeginning and hasEnd properties.
+        latestDataForSensor.hasBeginning = subMinutes(newSensorData.time, 5);
+        latestDataForSensor.hasEnd = newSensorData.time;
+      }
+
     }
 
     if (state === 'reuse-old-data') {
@@ -322,10 +330,161 @@ export function combineNewDeviceDataWithExistingLatest(newDeviceData: Reformatte
 
 export function latestToObservations(latest): ObservationClient[] {
 
-  return [];
+  const observations = [];
+
+  latest.sensors.forEach((sensorData) => {
+
+    const observationBase: ObservationClient = {
+      madeBySensor: generateSensorId(sensorData.moduleId, sensorData.type),
+      resultTime: sensorData.time.toISOString(),
+      location: {
+        id: latest.location.id,
+        geometry: {
+          type: 'Point',
+          coordinates: [latest.location.lon, latest.location.lat]
+        },
+        validAt: latest.location.validAt.toISOString()
+      }
+      // TODO: Would it make sensor to add a isHostedBy property here? I.e. with the deviceId for the main indoor module. This would probably need some updates to the sensor-deployment-manager to ensure it still added the rest of the hostedByPath. Alternatively I could manage all this with the admin-web-app, but you'd need to stay of top of any rain/wind gauge swaps.
+    };
+
+    //------------------------
+    // Temperature
+    //------------------------
+    if (sensorData.type === 'temperature') {
+      const tempObservation = cloneDeep(observationBase);
+      tempObservation.hasResult = {
+        value: sensorData.temperature
+      };
+      observations.push(tempObservation);
+    } 
+
+    //------------------------
+    // Humidity
+    //------------------------
+    if (sensorData.type === 'humidity') {
+      const humdidityObservation = cloneDeep(observationBase);
+      humdidityObservation.hasResult = {
+        value: sensorData.humidity
+      };
+      observations.push(humdidityObservation);
+    } 
+
+    //------------------------
+    // Pressure
+    //------------------------
+    if (sensorData.type === 'pressure') {
+      const pressureObservation = cloneDeep(observationBase);
+      pressureObservation.hasResult = {
+        value: sensorData.pressure
+      };
+      observations.push(pressureObservation);
+    }
+
+    //------------------------
+    // Rain
+    //------------------------
+    if (sensorData.type === 'rain') {
+
+      const intervalAvailable = check.assigned(sensorData.hasBeginning) && check.assigned(sensorData.hasEnd);
+
+      if (intervalAvailable) {
+
+        const rainObservationBase = cloneDeep(observationBase);
+        rainObservationBase.phenomenonTime = {
+          hasBeginning: sensorData.hasBeginning.toISOString(),
+          hasEnd: sensorData.hasEnd.toISOString()
+        };
+
+        if (check.assigned(sensorData.rainRate)) {
+          const rainRateObservation = cloneDeep(rainObservationBase);
+          rainRateObservation.hasResult = {
+            value: sensorData.rainRate
+          };
+          rainRateObservation.observedProperty = 'precipitation-rate';
+          observations.push(rainRateObservation);
+        }
+
+        if (check.assigned(sensorData.rainAccumulation)) {
+          const rainAccumulationObservation = cloneDeep(rainObservationBase);
+          rainAccumulationObservation.hasResult = {
+            value: sensorData.rainAccumulation
+          };
+          rainAccumulationObservation.observedProperty = 'precipitation-depth';
+          observations.push(rainAccumulationObservation);
+        }
+
+      }
+
+    } 
+
+    //------------------------
+    // Wind
+    //------------------------
+    if (sensorData.type === 'wind') {
+
+      const intervalAvailable = check.assigned(sensorData.hasBeginning) && check.assigned(sensorData.hasEnd);
+
+      if (intervalAvailable) {
+
+        const windObservationBase = cloneDeep(observationBase);
+        windObservationBase.phenomenonTime = {
+          hasBeginning: sensorData.hasBeginning.toISOString(),
+          hasEnd: sensorData.hasEnd.toISOString()
+        };
+
+        if (check.assigned(sensorData.windStrength)) {
+          const windStrengthObservation = cloneDeep(windObservationBase);
+          windStrengthObservation.hasResult = {
+            value: kilometrePerHourToMetresPerSecond(sensorData.windStrength)
+          };
+          windStrengthObservation.observedProperty = 'wind-velocity';
+          observations.push(windStrengthObservation);
+        }
+
+        if (check.assigned(sensorData.windAngle)) {
+          const windAngleObservation = cloneDeep(windObservationBase);
+          windAngleObservation.hasResult = {
+            value: sensorData.windAngle
+          };
+          // Netatmo uses the direction the wind has come FROM. E.g. Northerly wind = 0°. So no need to convert.
+          windAngleObservation.observedProperty = 'wind-direction';
+          observations.push(windAngleObservation);
+        }
+
+        if (check.assigned(sensorData.gustStrength)) {
+          const gustStrengthObservation = cloneDeep(windObservationBase);
+          gustStrengthObservation.hasResult = {
+            value: kilometrePerHourToMetresPerSecond(sensorData.gustStrength)
+          };
+          gustStrengthObservation.observedProperty = 'wind-gust-velocity';
+          observations.push(gustStrengthObservation);
+        }
+
+        if (check.assigned(sensorData.gustAngle)) {
+          const gustAngleObservation = cloneDeep(windObservationBase);
+          gustAngleObservation.hasResult = {
+            value: sensorData.gustAngle
+          };
+          gustAngleObservation.observedProperty = 'wind-gust-direction';
+          observations.push(gustAngleObservation);
+        }
+      }  
+    }
+
+
+
+  });
+
+  return observations;
 
 }
 
 
+export function generateSensorId(moduleId: string, type: string): string {
+  const urlSafeModuleId = moduleId.replace(/:/g, '-');
+  const sensorId = `netatmo-${urlSafeModuleId}-${type}`;
+  return sensorId;
+}
 
 

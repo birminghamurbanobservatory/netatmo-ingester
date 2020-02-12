@@ -24,6 +24,8 @@ class Sensor {
   moduleId: string;
   type: string;
   time: Date;
+  hasBeginning?: Date;
+  hasEnd?: Date;
   temperature?: number;
   humidity?: number;
   pressure?: number;
@@ -35,11 +37,5 @@ class Sensor {
   rainDay?: number;
   rainLive?: number;
   rainRate?: number;
-  rainAccumulation?: RainAccumulation;
-}
-
-class RainAccumulation {
-  from: Date;
-  to: Date;
-  depth: number;
+  rainAccumulation?: number;
 }

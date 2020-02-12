@@ -1,4 +1,5 @@
-import {reformatPublicData, combineNewDeviceDataWithExistingLatest} from './ingest';
+import {reformatPublicData, combineNewDeviceDataWithExistingLatest, latestToObservations} from './ingest';
+import {sortBy} from 'lodash'; 
 
 describe('Testing of reformatPublicData function', () => {
 
@@ -230,11 +231,9 @@ describe('Testing of combineNewDeviceDataWithExistingLatest function', () => {
           rainDay: 0.404,
           rainLive: 0.101,
           rainRate: 0.61,
-          rainAccumulation: {
-            from: new Date('2020-02-12T10:46:53.111Z'),
-            to: new Date('2020-02-12T10:56:53.333Z'),
-            depth: 0.101
-          },
+          rainAccumulation: 0.101,
+          hasBeginning: new Date('2020-02-12T10:46:53.111Z'),
+          hasEnd: new Date('2020-02-12T10:56:53.333Z'),
           time: new Date('2020-02-12T10:56:53.333Z')
         },
         {
@@ -244,6 +243,8 @@ describe('Testing of combineNewDeviceDataWithExistingLatest function', () => {
           windAngle: 61,
           gustStrength: 11,
           gustAngle: 130,
+          hasBeginning: new Date('2020-02-12T10:50:44.988Z'),
+          hasEnd: new Date('2020-02-12T10:55:44.988Z'),
           time: new Date('2020-02-12T10:55:44.988Z')       
         }     
       ]
@@ -290,11 +291,9 @@ describe('Testing of combineNewDeviceDataWithExistingLatest function', () => {
           rainDay: 0.606,
           rainLive: 0.101,
           rainRate: 1.20,
-          rainAccumulation: {
-            from: new Date('2020-02-12T10:56:53.333Z'),
-            to: new Date('2020-02-12T11:06:59.228Z'),
-            depth: 0.202, // i.e. the new rainDay minus the previous rainDay and NOT the new rainLive value.
-          }, 
+          rainAccumulation: 0.202,
+          hasBeginning: new Date('2020-02-12T10:56:53.333Z'),
+          hasEnd: new Date('2020-02-12T11:06:59.228Z'),
           time: new Date('2020-02-12T11:06:59.228Z')
         },
         {
@@ -304,6 +303,8 @@ describe('Testing of combineNewDeviceDataWithExistingLatest function', () => {
           windAngle: 59,
           gustStrength: 10,
           gustAngle: 125,
+          hasBeginning: new Date('2020-02-12T11:00:44.118Z'), 
+          hasEnd: new Date('2020-02-12T11:05:44.118Z'),
           time: new Date('2020-02-12T11:05:44.118Z')       
         }     
       ]
@@ -338,5 +339,249 @@ describe('Testing of combineNewDeviceDataWithExistingLatest function', () => {
 
 
   // TODO: Check it can cope with a rain or wind gauge being swapped. It should add another object in the sensors array in the latest document, e.g. you'll have two objects with a 'rain' type, but different moduleId's.
+
+});
+
+
+describe('Testing of latestToObservations function', () => {
+
+  test('Converts a regular latest object correctly', () => {
+    
+    const latest = {
+      deviceId: '70:ee:50:17:eb:1a',
+      location: {
+        lat: 52.461884,
+        lon: -1.949845,
+        id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+        validAt: new Date('2020-01-11T08:02:55.999Z')
+      },
+      extras: {
+        timezone: 'Europe/London',
+        country: 'GB',
+        altitude: 160,
+        city: 'Birmingham',
+        street: 'Park Hill Road'
+      },
+      sensors: [
+        {
+          moduleId: '02:00:00:17:68:62',
+          type: 'temperature',
+          temperature: 6.7,
+          time: new Date('2020-02-12T11:07:24.818Z')
+        },
+        {
+          moduleId: '02:00:00:17:68:62',
+          type: 'humidity',
+          humidity: 81,
+          time: new Date('2020-02-12T11:07:24.818Z')
+        },
+        {
+          moduleId: '70:ee:50:17:eb:1a',
+          type: 'pressure',
+          pressure: 1012.2,
+          time: new Date('2020-02-12T11:00:54.899Z')
+        },
+        {
+          moduleId: '05:00:00:06:db:60',
+          type: 'rain',
+          rainHour: 0.404,
+          rainDay: 0.606,
+          rainLive: 0.101,
+          rainRate: 1.20,
+          rainAccumulation: 0.202,
+          hasBeginning: new Date('2020-02-12T10:56:53.333Z'),
+          hasEnd: new Date('2020-02-12T11:06:59.228Z'),
+          time: new Date('2020-02-12T11:06:59.228Z')
+        },
+        {
+          moduleId: '06:00:00:04:1f:4e',
+          type: 'wind',
+          windStrength: 6,
+          windAngle: 59,
+          gustStrength: 10,
+          gustAngle: 125,
+          hasBeginning: new Date('2020-02-12T11:00:44.118Z'),
+          hasEnd: new Date('2020-02-12T11:05:44.118Z'),
+          time: new Date('2020-02-12T11:05:44.118Z')       
+        }     
+      ]
+    };
+
+    // Make sure these are sorted by madeBySensor and then observedProperty so that expect().toEqual works.
+    const expected = [
+      {
+        madeBySensor: 'netatmo-02-00-00-17-68-62-humidity',
+        resultTime: '2020-02-12T11:07:24.818Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        hasResult: {
+          value: 81
+        }
+      },
+      {
+        madeBySensor: 'netatmo-02-00-00-17-68-62-temperature',
+        resultTime: '2020-02-12T11:07:24.818Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        hasResult: {
+          value: 6.7
+        }
+      },
+      {
+        madeBySensor: 'netatmo-05-00-00-06-db-60-rain',
+        resultTime: '2020-02-12T11:06:59.228Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'precipitation-depth',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T10:56:53.333Z',
+          hasEnd: '2020-02-12T11:06:59.228Z'
+        },
+        hasResult: {
+          value: 0.202
+        }
+      },
+      {
+        madeBySensor: 'netatmo-05-00-00-06-db-60-rain',
+        resultTime: '2020-02-12T11:06:59.228Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'precipitation-rate',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T10:56:53.333Z',
+          hasEnd: '2020-02-12T11:06:59.228Z'
+        },
+        hasResult: {
+          value: 1.20
+        }
+      },
+      {
+        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
+        resultTime: '2020-02-12T11:05:44.118Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'wind-direction',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T11:00:44.118Z',
+          hasEnd: '2020-02-12T11:05:44.118Z'
+        },
+        hasResult: {
+          value: 59
+        }
+      },
+      {
+        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
+        resultTime: '2020-02-12T11:05:44.118Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'wind-gust-direction',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T11:00:44.118Z',
+          hasEnd: '2020-02-12T11:05:44.118Z'
+        },
+        hasResult: {
+          value: 125
+        }
+      },
+      {
+        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
+        resultTime: '2020-02-12T11:05:44.118Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'wind-gust-velocity',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T11:00:44.118Z',
+          hasEnd: '2020-02-12T11:05:44.118Z'
+        },
+        hasResult: {
+          value: 2.8
+        }
+      },
+      {
+        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
+        resultTime: '2020-02-12T11:05:44.118Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'wind-velocity',
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T11:00:44.118Z',
+          hasEnd: '2020-02-12T11:05:44.118Z'
+        },
+        hasResult: {
+          value: 1.7
+        }
+      },
+      {
+        madeBySensor: 'netatmo-70-ee-50-17-eb-1a-pressure',
+        resultTime: '2020-02-12T11:00:54.899Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        hasResult: {
+          value: 1012.2
+        }
+      }
+    ];
+
+
+    const observations = latestToObservations(latest);
+    // Need to sort the observations so that the order matches that of the expected array above.
+    const observationsSorted = sortBy(observations, ['madeBySensor', 'observedProperty']);
+    expect(observationsSorted).toEqual(expected);
+
+  });
 
 });

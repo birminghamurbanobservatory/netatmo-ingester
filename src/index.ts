@@ -52,7 +52,7 @@ logger.warn(`${appName} restarted`);
   // Scheduler 
   //-------------------------------------------------
   // Runs every 5 minutes, at 20 seconds past the minute, e.g. 08:00:20, 08:05:20, 08:05:20
-  const job = new CronJob('20 0/1 * * * *', async () => {
+  const job = new CronJob('20 0/5 * * * *', async () => {
     logger.debug(`Running cronjob at ${new Date().toISOString()}`);
     try {
       await ingestPublicData(config.netatmo.credentials, config.netatmo.region);
@@ -65,7 +65,6 @@ logger.warn(`${appName} restarted`);
   // Start it
   logger.info('Starting Scheduler');
   job.start();
-
 
 
 })();

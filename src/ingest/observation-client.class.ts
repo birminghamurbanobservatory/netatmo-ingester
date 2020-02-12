@@ -1,14 +1,11 @@
 export class ObservationClient {
-  public id?: string;
   public madeBySensor?: string;
   public hasResult?: Result;
-  public hostedByPath?: string[];
-  public inDeployments?: string[];
   public resultTime?: string;
-  public hasFeatureOfInterest?: string;
   public location?: Location;
   public observedProperty?: string;
   public usedProcedures?: string[];
+  public phenomenonTime?: PhenomenonTime;
 }
 
 class Result {
@@ -25,4 +22,9 @@ class Location {
 class Geometry {
   type?: string;
   coordinates?: any;
+}
+
+class PhenomenonTime {
+  hasBeginning: Date;
+  hasEnd: Date;
 }
