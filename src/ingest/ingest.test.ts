@@ -450,7 +450,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'precipitation-depth',
+        observedProperty: 'PrecipitationDepth',
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
           hasEnd: '2020-02-12T11:06:59.228Z'
@@ -470,7 +470,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'precipitation-rate',
+        observedProperty: 'PrecipitationRate',
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
           hasEnd: '2020-02-12T11:06:59.228Z'
@@ -490,7 +490,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'wind-direction',
+        observedProperty: 'WindDirection',
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
@@ -510,7 +510,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'wind-gust-direction',
+        observedProperty: 'WindGustDirection',
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
@@ -530,7 +530,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'wind-gust-velocity',
+        observedProperty: 'WindGustSpeed',
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
@@ -550,7 +550,7 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'wind-velocity',
+        observedProperty: 'WindSpeed',
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'

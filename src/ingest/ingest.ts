@@ -401,7 +401,7 @@ export function latestToObservations(latest): ObservationClient[] {
           rainRateObservation.hasResult = {
             value: sensorData.rainRate
           };
-          rainRateObservation.observedProperty = 'precipitation-rate';
+          rainRateObservation.observedProperty = 'PrecipitationRate';
           observations.push(rainRateObservation);
         }
 
@@ -410,7 +410,7 @@ export function latestToObservations(latest): ObservationClient[] {
           rainAccumulationObservation.hasResult = {
             value: sensorData.rainAccumulation
           };
-          rainAccumulationObservation.observedProperty = 'precipitation-depth';
+          rainAccumulationObservation.observedProperty = 'PrecipitationDepth';
           observations.push(rainAccumulationObservation);
         }
 
@@ -438,7 +438,7 @@ export function latestToObservations(latest): ObservationClient[] {
           windStrengthObservation.hasResult = {
             value: kilometrePerHourToMetresPerSecond(sensorData.windStrength)
           };
-          windStrengthObservation.observedProperty = 'wind-velocity';
+          windStrengthObservation.observedProperty = 'WindSpeed';
           observations.push(windStrengthObservation);
         }
 
@@ -448,7 +448,7 @@ export function latestToObservations(latest): ObservationClient[] {
             value: sensorData.windAngle
           };
           // Netatmo uses the direction the wind has come FROM. E.g. Northerly wind = 0°. So no need to convert.
-          windAngleObservation.observedProperty = 'wind-direction';
+          windAngleObservation.observedProperty = 'WindDirection';
           observations.push(windAngleObservation);
         }
 
@@ -457,7 +457,7 @@ export function latestToObservations(latest): ObservationClient[] {
           gustStrengthObservation.hasResult = {
             value: kilometrePerHourToMetresPerSecond(sensorData.gustStrength)
           };
-          gustStrengthObservation.observedProperty = 'wind-gust-velocity';
+          gustStrengthObservation.observedProperty = 'WindGustSpeed';
           observations.push(gustStrengthObservation);
         }
 
@@ -466,7 +466,7 @@ export function latestToObservations(latest): ObservationClient[] {
           gustAngleObservation.hasResult = {
             value: sensorData.gustAngle
           };
-          gustAngleObservation.observedProperty = 'wind-gust-direction';
+          gustAngleObservation.observedProperty = 'WindGustDirection';
           observations.push(gustAngleObservation);
         }
       }  
