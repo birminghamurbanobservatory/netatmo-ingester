@@ -1,6 +1,12 @@
 import {round} from 'lodash';
 
 
+/**
+ * Calculates the rate per hour.
+ * @param from 
+ * @param to 
+ * @param depth - if the depth is in millimetres, then it'll be the rate in mm/hr
+ */
 export function calculateRainRate(from: Date, to: Date, depth: number): number {
 
   const fromMs = from.getTime();
