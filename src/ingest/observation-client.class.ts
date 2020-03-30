@@ -10,6 +10,7 @@ export class ObservationClient {
 
 class Result {
   value?: any;
+  unit?: string;
   flags?: string[];
 }
 
