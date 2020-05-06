@@ -407,7 +407,7 @@ describe('Testing of latestToObservations function', () => {
       ]
     };
 
-    // Make sure these are sorted by madeBySensor and then observedProperty so that expect().toEqual works.
+    // Make sure these are sorted by madeBySensor, then observedProperty, then aggregation so that expect().toEqual works.
     const expected = [
       {
         madeBySensor: 'netatmo-02-00-00-17-68-62-humidity',
@@ -421,8 +421,12 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         hasResult: {
-          value: 81
-        }
+          value: 81,
+          unit: 'Percent'
+        },
+        observedProperty: 'RelativeHumidity',
+        aggregation: 'Instant',
+        usedProcedures: ['netatmo-humidity-instantaneous']
       },
       {
         madeBySensor: 'netatmo-02-00-00-17-68-62-temperature',
@@ -436,8 +440,12 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         hasResult: {
-          value: 6.7
-        }
+          value: 6.7,
+          unit: 'DegreeCelsius',
+        },
+        observedProperty: 'AirTemperature',
+        aggregation: 'Instant',
+        usedProcedures: ['netatmo-temperature-instantaneous']
       },
       {
         madeBySensor: 'netatmo-05-00-00-06-db-60-rain',
@@ -451,13 +459,16 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         observedProperty: 'PrecipitationDepth',
+        aggregation: 'Sum',
+        usedProcedures: ['uo-netatmo-precip-depth-derivation'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
           hasEnd: '2020-02-12T11:06:59.228Z'
         },
         hasResult: {
-          value: 0.202
-        }
+          value: 0.202,
+          unit: 'Millimetre'
+        },
       },
       {
         madeBySensor: 'netatmo-05-00-00-06-db-60-rain',
@@ -471,12 +482,15 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         observedProperty: 'PrecipitationRate',
+        aggregation: 'Average',
+        usedProcedures: ['uo-netatmo-precip-rate-derivation'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
           hasEnd: '2020-02-12T11:06:59.228Z'
         },
         hasResult: {
-          value: 1.20
+          value: 1.20,
+          unit: 'MillimetrePerHour',
         }
       },
       {
@@ -491,12 +505,15 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         observedProperty: 'WindDirection',
+        aggregation: 'Average',
+        usedProcedures: ['netatmo-wind-direction-5-min-average'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
         },
         hasResult: {
-          value: 59
+          value: 59,
+          unit: 'Degree'
         }
       },
       {
@@ -510,33 +527,16 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'WindGustDirection',
+        observedProperty: 'WindDirection',
+        aggregation: 'Maximum', // is 'Maximum' right to use in this instance?
+        usedProcedures: ['netatmo-wind-dir-during-5-min-max-speed'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
         },
         hasResult: {
-          value: 125
-        }
-      },
-      {
-        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
-        resultTime: '2020-02-12T11:05:44.118Z',
-        location: {
-          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
-          geometry: {
-            type: 'Point',
-            coordinates: [-1.949845, 52.461884]
-          },
-          validAt: '2020-01-11T08:02:55.999Z'
-        },
-        observedProperty: 'WindGustSpeed',
-        phenomenonTime: {
-          hasBeginning: '2020-02-12T11:00:44.118Z',
-          hasEnd: '2020-02-12T11:05:44.118Z'
-        },
-        hasResult: {
-          value: 2.8
+          value: 125,
+          unit: 'Degree'
         }
       },
       {
@@ -551,12 +551,38 @@ describe('Testing of latestToObservations function', () => {
           validAt: '2020-01-11T08:02:55.999Z'
         },
         observedProperty: 'WindSpeed',
+        aggregation: 'Average',
+        usedProcedures: ['netatmo-wind-speed-5-min-average', 'kilometre-per-hour-to-metre-per-second'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
           hasEnd: '2020-02-12T11:05:44.118Z'
         },
         hasResult: {
-          value: 1.7
+          value: 1.7,
+          unit: 'MetrePerSecond'
+        }
+      },      
+      {
+        madeBySensor: 'netatmo-06-00-00-04-1f-4e-wind',
+        resultTime: '2020-02-12T11:05:44.118Z',
+        location: {
+          id: '7cde49a7-adc5-423d-9cc0-1f78994f7f40',
+          geometry: {
+            type: 'Point',
+            coordinates: [-1.949845, 52.461884]
+          },
+          validAt: '2020-01-11T08:02:55.999Z'
+        },
+        observedProperty: 'WindSpeed',
+        aggregation: 'Maximum', 
+        usedProcedures: ['netatmo-wind-speed-5-min-maximum', 'kilometre-per-hour-to-metre-per-second'],
+        phenomenonTime: {
+          hasBeginning: '2020-02-12T11:00:44.118Z',
+          hasEnd: '2020-02-12T11:05:44.118Z'
+        },
+        hasResult: {
+          value: 2.8,
+          unit: 'MetrePerSecond'
         }
       },
       {
@@ -570,8 +596,12 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
+        observedProperty: 'AirPressureAtMeanSeaLevel', 
+        aggregation: 'Instant',
+        usedProcedures: ['netatmo-pressure-instantaneous', 'netatmo-pressure-adjusted-to-sea-level'],
         hasResult: {
-          value: 1012.2
+          value: 1012.2,
+          unit: 'Hectopascal'
         }
       }
     ];
@@ -579,7 +609,7 @@ describe('Testing of latestToObservations function', () => {
 
     const observations = latestToObservations(latest);
     // Need to sort the observations so that the order matches that of the expected array above.
-    const observationsSorted = sortBy(observations, ['madeBySensor', 'observedProperty']);
+    const observationsSorted = sortBy(observations, ['madeBySensor', 'observedProperty', 'aggregation']);
     expect(observationsSorted).toEqual(expected);
 
   });

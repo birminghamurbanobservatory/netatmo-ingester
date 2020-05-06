@@ -354,8 +354,12 @@ export function latestToObservations(latest): ObservationClient[] {
     if (sensorData.type === 'temperature') {
       const tempObservation = cloneDeep(observationBase);
       tempObservation.hasResult = {
-        value: sensorData.temperature
+        value: sensorData.temperature,
+        unit: 'DegreeCelsius'
       };
+      tempObservation.observedProperty = 'AirTemperature';
+      tempObservation.aggregation = 'Instant';
+      tempObservation.usedProcedures = ['netatmo-temperature-instantaneous'],
       observations.push(tempObservation);
     } 
 
@@ -365,8 +369,12 @@ export function latestToObservations(latest): ObservationClient[] {
     if (sensorData.type === 'humidity') {
       const humdidityObservation = cloneDeep(observationBase);
       humdidityObservation.hasResult = {
-        value: sensorData.humidity
+        value: sensorData.humidity,
+        unit: 'Percent'
       };
+      humdidityObservation.observedProperty = 'RelativeHumidity';
+      humdidityObservation.aggregation = 'Instant';
+      humdidityObservation.usedProcedures = ['netatmo-humidity-instantaneous'],
       observations.push(humdidityObservation);
     } 
 
@@ -376,8 +384,12 @@ export function latestToObservations(latest): ObservationClient[] {
     if (sensorData.type === 'pressure') {
       const pressureObservation = cloneDeep(observationBase);
       pressureObservation.hasResult = {
-        value: sensorData.pressure
+        value: sensorData.pressure,
+        unit: 'Hectopascal'
       };
+      pressureObservation.observedProperty = 'AirPressureAtMeanSeaLevel';
+      pressureObservation.aggregation = 'Instant';
+      pressureObservation.usedProcedures = ['netatmo-pressure-instantaneous', 'netatmo-pressure-adjusted-to-sea-level'],
       observations.push(pressureObservation);
     }
 
@@ -399,18 +411,24 @@ export function latestToObservations(latest): ObservationClient[] {
         if (check.assigned(sensorData.rainRate)) {
           const rainRateObservation = cloneDeep(rainObservationBase);
           rainRateObservation.hasResult = {
-            value: sensorData.rainRate
+            value: sensorData.rainRate,
+            unit: 'MillimetrePerHour'
           };
           rainRateObservation.observedProperty = 'PrecipitationRate';
+          rainRateObservation.aggregation = 'Average';
+          rainRateObservation.usedProcedures = ['uo-netatmo-precip-rate-derivation'];
           observations.push(rainRateObservation);
         }
 
         if (check.assigned(sensorData.rainAccumulation)) {
           const rainAccumulationObservation = cloneDeep(rainObservationBase);
           rainAccumulationObservation.hasResult = {
-            value: sensorData.rainAccumulation
+            value: sensorData.rainAccumulation,
+            unit: 'Millimetre'
           };
           rainAccumulationObservation.observedProperty = 'PrecipitationDepth';
+          rainAccumulationObservation.aggregation = 'Sum';
+          rainAccumulationObservation.usedProcedures = ['uo-netatmo-precip-depth-derivation'];
           observations.push(rainAccumulationObservation);
         }
 
@@ -433,40 +451,56 @@ export function latestToObservations(latest): ObservationClient[] {
           hasEnd: sensorData.hasEnd.toISOString()
         };
 
+        // Wind Speed
         if (check.assigned(sensorData.windStrength)) {
           const windStrengthObservation = cloneDeep(windObservationBase);
           windStrengthObservation.hasResult = {
-            value: kilometrePerHourToMetresPerSecond(sensorData.windStrength)
+            value: kilometrePerHourToMetresPerSecond(sensorData.windStrength),
+            unit: 'MetrePerSecond'
           };
           windStrengthObservation.observedProperty = 'WindSpeed';
+          windStrengthObservation.aggregation = 'Average';
+          windStrengthObservation.usedProcedures = ['netatmo-wind-speed-5-min-average', 'kilometre-per-hour-to-metre-per-second'];
           observations.push(windStrengthObservation);
         }
 
+        // Wind Direction
         if (check.assigned(sensorData.windAngle)) {
           const windAngleObservation = cloneDeep(windObservationBase);
           windAngleObservation.hasResult = {
-            value: sensorData.windAngle
+            value: sensorData.windAngle,
+            unit: 'Degree'
           };
           // Netatmo uses the direction the wind has come FROM. E.g. Northerly wind = 0°. So no need to convert.
           windAngleObservation.observedProperty = 'WindDirection';
+          windAngleObservation.aggregation = 'Average';
+          windAngleObservation.usedProcedures = ['netatmo-wind-direction-5-min-average'];
           observations.push(windAngleObservation);
         }
 
+        // Wind Gust Speed
         if (check.assigned(sensorData.gustStrength)) {
           const gustStrengthObservation = cloneDeep(windObservationBase);
           gustStrengthObservation.hasResult = {
-            value: kilometrePerHourToMetresPerSecond(sensorData.gustStrength)
+            value: kilometrePerHourToMetresPerSecond(sensorData.gustStrength),
+            unit: 'MetrePerSecond'
           };
-          gustStrengthObservation.observedProperty = 'WindGustSpeed';
+          gustStrengthObservation.observedProperty = 'WindSpeed';
+          gustStrengthObservation.aggregation = 'Maximum';
+          gustStrengthObservation.usedProcedures = ['netatmo-wind-speed-5-min-maximum', 'kilometre-per-hour-to-metre-per-second'];
           observations.push(gustStrengthObservation);
         }
 
+        // Wind Gust Angle
         if (check.assigned(sensorData.gustAngle)) {
           const gustAngleObservation = cloneDeep(windObservationBase);
           gustAngleObservation.hasResult = {
-            value: sensorData.gustAngle
+            value: sensorData.gustAngle,
+            unit: 'Degree'
           };
-          gustAngleObservation.observedProperty = 'WindGustDirection';
+          gustAngleObservation.observedProperty = 'WindDirection';
+          gustAngleObservation.aggregation = 'Maximum';
+          gustAngleObservation.usedProcedures = ['netatmo-wind-dir-during-5-min-max-speed'];
           observations.push(gustAngleObservation);
         }
       }  

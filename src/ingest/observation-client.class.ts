@@ -4,6 +4,7 @@ export class ObservationClient {
   public resultTime?: string;
   public location?: Location;
   public observedProperty?: string;
+  public aggregation?: string;
   public usedProcedures?: string[];
   public phenomenonTime?: PhenomenonTime;
 }
