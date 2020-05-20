@@ -136,8 +136,8 @@ export function reformatPublicDataSingleDevice(data): ReformattedDevicePublicDat
   const reformatted = {
     deviceId: data._id,
     location: {
-      lat: data.place.location[1],
-      lon: data.place.location[0]
+      lat: round(data.place.location[1], 7), // no point in having more than 7 decimal places
+      lon: round(data.place.location[0], 7)
     },
     extras: pick(data.place, ['timezone', 'country', 'altitude', 'city', 'street']),
     sensors: []
