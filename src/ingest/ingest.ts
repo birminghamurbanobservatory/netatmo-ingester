@@ -355,10 +355,10 @@ export function latestToObservations(latest): ObservationClient[] {
       const tempObservation = cloneDeep(observationBase);
       tempObservation.hasResult = {
         value: sensorData.temperature,
-        unit: 'DegreeCelsius'
+        unit: 'degree-celsius'
       };
-      tempObservation.observedProperty = 'AirTemperature';
-      tempObservation.aggregation = 'Instant';
+      tempObservation.observedProperty = 'air-temperature';
+      tempObservation.aggregation = 'instant';
       tempObservation.usedProcedures = ['netatmo-temperature-instantaneous'],
       observations.push(tempObservation);
     } 
@@ -370,10 +370,10 @@ export function latestToObservations(latest): ObservationClient[] {
       const humdidityObservation = cloneDeep(observationBase);
       humdidityObservation.hasResult = {
         value: sensorData.humidity,
-        unit: 'Percent'
+        unit: 'percent'
       };
-      humdidityObservation.observedProperty = 'RelativeHumidity';
-      humdidityObservation.aggregation = 'Instant';
+      humdidityObservation.observedProperty = 'relative-humidity';
+      humdidityObservation.aggregation = 'instant';
       humdidityObservation.usedProcedures = ['netatmo-humidity-instantaneous'],
       observations.push(humdidityObservation);
     } 
@@ -385,10 +385,10 @@ export function latestToObservations(latest): ObservationClient[] {
       const pressureObservation = cloneDeep(observationBase);
       pressureObservation.hasResult = {
         value: sensorData.pressure,
-        unit: 'Hectopascal'
+        unit: 'hectopascal'
       };
-      pressureObservation.observedProperty = 'AirPressureAtMeanSeaLevel';
-      pressureObservation.aggregation = 'Instant';
+      pressureObservation.observedProperty = 'air-pressure-at-mean-sea-level';
+      pressureObservation.aggregation = 'instant';
       pressureObservation.usedProcedures = ['netatmo-pressure-instantaneous', 'netatmo-pressure-adjusted-to-sea-level'],
       observations.push(pressureObservation);
     }
@@ -412,10 +412,10 @@ export function latestToObservations(latest): ObservationClient[] {
           const rainRateObservation = cloneDeep(rainObservationBase);
           rainRateObservation.hasResult = {
             value: sensorData.rainRate,
-            unit: 'MillimetrePerHour'
+            unit: 'millimetre-per-hour'
           };
-          rainRateObservation.observedProperty = 'PrecipitationRate';
-          rainRateObservation.aggregation = 'Average';
+          rainRateObservation.observedProperty = 'precipitation-rate';
+          rainRateObservation.aggregation = 'average';
           rainRateObservation.usedProcedures = ['uo-netatmo-precip-rate-derivation'];
           observations.push(rainRateObservation);
         }
@@ -424,10 +424,10 @@ export function latestToObservations(latest): ObservationClient[] {
           const rainAccumulationObservation = cloneDeep(rainObservationBase);
           rainAccumulationObservation.hasResult = {
             value: sensorData.rainAccumulation,
-            unit: 'Millimetre'
+            unit: 'millimetre'
           };
-          rainAccumulationObservation.observedProperty = 'PrecipitationDepth';
-          rainAccumulationObservation.aggregation = 'Sum';
+          rainAccumulationObservation.observedProperty = 'precipitation-depth';
+          rainAccumulationObservation.aggregation = 'sum';
           rainAccumulationObservation.usedProcedures = ['uo-netatmo-precip-depth-derivation'];
           observations.push(rainAccumulationObservation);
         }
@@ -456,10 +456,10 @@ export function latestToObservations(latest): ObservationClient[] {
           const windStrengthObservation = cloneDeep(windObservationBase);
           windStrengthObservation.hasResult = {
             value: kilometrePerHourToMetresPerSecond(sensorData.windStrength),
-            unit: 'MetrePerSecond'
+            unit: 'metre-per-second'
           };
-          windStrengthObservation.observedProperty = 'WindSpeed';
-          windStrengthObservation.aggregation = 'Average';
+          windStrengthObservation.observedProperty = 'wind-speed';
+          windStrengthObservation.aggregation = 'average';
           windStrengthObservation.usedProcedures = ['netatmo-wind-speed-5-min-average', 'kilometre-per-hour-to-metre-per-second'];
           observations.push(windStrengthObservation);
         }
@@ -469,11 +469,11 @@ export function latestToObservations(latest): ObservationClient[] {
           const windAngleObservation = cloneDeep(windObservationBase);
           windAngleObservation.hasResult = {
             value: sensorData.windAngle,
-            unit: 'Degree'
+            unit: 'degree'
           };
           // Netatmo uses the direction the wind has come FROM. E.g. Northerly wind = 0°. So no need to convert.
-          windAngleObservation.observedProperty = 'WindDirection';
-          windAngleObservation.aggregation = 'Average';
+          windAngleObservation.observedProperty = 'wind-direction';
+          windAngleObservation.aggregation = 'average';
           windAngleObservation.usedProcedures = ['netatmo-wind-direction-5-min-average'];
           observations.push(windAngleObservation);
         }
@@ -483,10 +483,10 @@ export function latestToObservations(latest): ObservationClient[] {
           const gustStrengthObservation = cloneDeep(windObservationBase);
           gustStrengthObservation.hasResult = {
             value: kilometrePerHourToMetresPerSecond(sensorData.gustStrength),
-            unit: 'MetrePerSecond'
+            unit: 'metre-per-second'
           };
-          gustStrengthObservation.observedProperty = 'WindSpeed';
-          gustStrengthObservation.aggregation = 'Maximum';
+          gustStrengthObservation.observedProperty = 'wind-speed';
+          gustStrengthObservation.aggregation = 'maximum';
           gustStrengthObservation.usedProcedures = ['netatmo-wind-speed-5-min-maximum', 'kilometre-per-hour-to-metre-per-second'];
           observations.push(gustStrengthObservation);
         }
@@ -496,10 +496,10 @@ export function latestToObservations(latest): ObservationClient[] {
           const gustAngleObservation = cloneDeep(windObservationBase);
           gustAngleObservation.hasResult = {
             value: sensorData.gustAngle,
-            unit: 'Degree'
+            unit: 'degree'
           };
-          gustAngleObservation.observedProperty = 'WindDirection';
-          gustAngleObservation.aggregation = 'Maximum';
+          gustAngleObservation.observedProperty = 'wind-direction';
+          gustAngleObservation.aggregation = 'maximum';
           gustAngleObservation.usedProcedures = ['netatmo-wind-dir-during-5-min-max-speed'];
           observations.push(gustAngleObservation);
         }

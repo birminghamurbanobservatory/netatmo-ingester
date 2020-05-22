@@ -422,10 +422,10 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 81,
-          unit: 'Percent'
+          unit: 'percent'
         },
-        observedProperty: 'RelativeHumidity',
-        aggregation: 'Instant',
+        observedProperty: 'relative-humidity',
+        aggregation: 'instant',
         usedProcedures: ['netatmo-humidity-instantaneous']
       },
       {
@@ -441,10 +441,10 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 6.7,
-          unit: 'DegreeCelsius',
+          unit: 'degree-celsius',
         },
-        observedProperty: 'AirTemperature',
-        aggregation: 'Instant',
+        observedProperty: 'air-temperature',
+        aggregation: 'instant',
         usedProcedures: ['netatmo-temperature-instantaneous']
       },
       {
@@ -458,8 +458,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'PrecipitationDepth',
-        aggregation: 'Sum',
+        observedProperty: 'precipitation-depth',
+        aggregation: 'sum',
         usedProcedures: ['uo-netatmo-precip-depth-derivation'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
@@ -467,7 +467,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 0.202,
-          unit: 'Millimetre'
+          unit: 'millimetre'
         },
       },
       {
@@ -481,8 +481,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'PrecipitationRate',
-        aggregation: 'Average',
+        observedProperty: 'precipitation-rate',
+        aggregation: 'average',
         usedProcedures: ['uo-netatmo-precip-rate-derivation'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T10:56:53.333Z',
@@ -490,7 +490,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 1.20,
-          unit: 'MillimetrePerHour',
+          unit: 'millimetre-per-hour',
         }
       },
       {
@@ -504,8 +504,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'WindDirection',
-        aggregation: 'Average',
+        observedProperty: 'wind-direction',
+        aggregation: 'average',
         usedProcedures: ['netatmo-wind-direction-5-min-average'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
@@ -513,7 +513,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 59,
-          unit: 'Degree'
+          unit: 'degree'
         }
       },
       {
@@ -527,8 +527,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'WindDirection',
-        aggregation: 'Maximum', // is 'Maximum' right to use in this instance?
+        observedProperty: 'wind-direction',
+        aggregation: 'maximum', // is 'Maximum' right to use in this instance?
         usedProcedures: ['netatmo-wind-dir-during-5-min-max-speed'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
@@ -536,7 +536,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 125,
-          unit: 'Degree'
+          unit: 'degree'
         }
       },
       {
@@ -550,8 +550,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'WindSpeed',
-        aggregation: 'Average',
+        observedProperty: 'wind-speed',
+        aggregation: 'average',
         usedProcedures: ['netatmo-wind-speed-5-min-average', 'kilometre-per-hour-to-metre-per-second'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
@@ -559,7 +559,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 1.7,
-          unit: 'MetrePerSecond'
+          unit: 'metre-per-second'
         }
       },      
       {
@@ -573,8 +573,8 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'WindSpeed',
-        aggregation: 'Maximum', 
+        observedProperty: 'wind-speed',
+        aggregation: 'maximum', 
         usedProcedures: ['netatmo-wind-speed-5-min-maximum', 'kilometre-per-hour-to-metre-per-second'],
         phenomenonTime: {
           hasBeginning: '2020-02-12T11:00:44.118Z',
@@ -582,7 +582,7 @@ describe('Testing of latestToObservations function', () => {
         },
         hasResult: {
           value: 2.8,
-          unit: 'MetrePerSecond'
+          unit: 'metre-per-second'
         }
       },
       {
@@ -596,12 +596,12 @@ describe('Testing of latestToObservations function', () => {
           },
           validAt: '2020-01-11T08:02:55.999Z'
         },
-        observedProperty: 'AirPressureAtMeanSeaLevel', 
-        aggregation: 'Instant',
+        observedProperty: 'air-pressure-at-mean-sea-level', 
+        aggregation: 'instant',
         usedProcedures: ['netatmo-pressure-instantaneous', 'netatmo-pressure-adjusted-to-sea-level'],
         hasResult: {
           value: 1012.2,
-          unit: 'Hectopascal'
+          unit: 'hectopascal'
         }
       }
     ];
