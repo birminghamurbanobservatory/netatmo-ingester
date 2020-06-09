@@ -2,6 +2,7 @@ const axios = require('axios').default;
 import {Credentials} from './credentials.class';
 import * as querystring from 'querystring';
 import * as check from 'check-types';
+import * as logger from 'node-logger';
 
 //-------------------------------------------------
 // Get Access Token
@@ -67,6 +68,7 @@ export async function getPublicData(params: {accessToken: string; latNE: number;
 
     let errMsg = `Public data request failed. Reason: ${err.message}.`;
     if (err.response && err.response.data && err.response.data.error) {
+      logger.debug(err.response.data.error); // logging this here, because sometimes it seems to be an object not a string.
       errMsg += ` Netatmo Error: ${err.response.data.error}.`;
     }
     throw new Error(errMsg);
