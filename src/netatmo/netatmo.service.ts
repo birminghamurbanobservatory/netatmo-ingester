@@ -68,6 +68,7 @@ export async function getPublicData(params: {accessToken: string; latNE: number;
 
     let errMsg = `Public data request failed. Reason: ${err.message}.`;
     if (err.response && err.response.data && err.response.data.error) {
+      logger.debug(err.response.data);
       if (check.nonEmptyString(err.response.data.error)) {
         errMsg += ` Netatmo Error: ${err.response.data.error}.`;
       }
