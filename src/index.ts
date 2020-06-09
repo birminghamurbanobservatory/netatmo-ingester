@@ -56,7 +56,7 @@ logger.warn(`${appName} restarted`);
     logger.debug(`Running cronjob at ${new Date().toISOString()}`);
     try {
       await ingestPublicData(config.netatmo.credentials, config.netatmo.region);
-      logger.debug('Successfully ingested public data.');
+      logger.info('Successfully ingested public netatmo data.');
     } catch (err) {
       logger.error('Failed to get Netatmo data', err);
     }
