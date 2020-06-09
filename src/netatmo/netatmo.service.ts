@@ -68,8 +68,12 @@ export async function getPublicData(params: {accessToken: string; latNE: number;
 
     let errMsg = `Public data request failed. Reason: ${err.message}.`;
     if (err.response && err.response.data && err.response.data.error) {
-      logger.debug(err.response.data.error); // logging this here, because sometimes it seems to be an object not a string.
-      errMsg += ` Netatmo Error: ${err.response.data.error}.`;
+      if (check.nonEmptyString(err.response.data.error)) {
+        errMsg += ` Netatmo Error: ${err.response.data.error}.`;
+      }
+      if (check.nonEmptyObject(err.response.data.error && check.nonEmptyString(err.response.data.error.message))) {
+        errMsg += ` Netatmo Error: ${err.response.data.error.message}.`;
+      }
     }
     throw new Error(errMsg);
 
