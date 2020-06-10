@@ -121,8 +121,7 @@ export async function getPublicDataWithRetries(params: any, nRetries = 5): Promi
     }
     return data;
   }, {
-    interval: 1000, // initial wait time between attempts in milliseconds
-    backoff: 500, // if specified, increase interval by this factor between attempts
+    interval: 1000, // initial wait time between attempts in millisecond
     max_tries: nRetries, // maximum number of attempts
     throw_original: true // to throw the last thrown error instance rather than a timeout error.
   });
