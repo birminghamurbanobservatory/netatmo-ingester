@@ -1,6 +1,6 @@
 import {Credentials} from '../netatmo/credentials.class';
 import {Region} from '../netatmo/region.class';
-import {getAccessToken, getPublicData} from '../netatmo/netatmo.service';
+import {getAccessToken, getPublicData, getPublicDataWithRetries} from '../netatmo/netatmo.service';
 import * as logger from 'node-logger';
 import {calculateWindows} from '../netatmo/windows-calculator';
 import * as Promise from 'bluebird';
@@ -33,7 +33,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
     logger.debug(`Processing window ${wIdx + 1} of ${windows.length}.`);
 
-    const publicData = await getPublicData({
+    const publicData = await getPublicDataWithRetries({
       accessToken,
       latNE: region.north,
       latSW: region.south,
@@ -116,7 +116,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
     // In terms of keeping the Netatmo location up to date in the sensor-deployment-manager, it's probably worth updating the sensor-deployment-manager so that any sensor can update a platform's location, just so long as the observation has a location object. The trade-off of this approach as opposed to creating a fake netatmo location sensor is that you won't have a history of locations, but given how rarely netatmo's move this shouldn't be an issue.
 
     // Add a short delay to help reduce the chance of hitting the api rate limits
-    await Promise.delay(750);
+    await Promise.delay(500);
 
     return;
 
