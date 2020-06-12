@@ -43,6 +43,7 @@ logger.warn(`${appName} restarted`);
       appName,
       logLevel: config.events.logLevel
     });
+    logger.debug('event stream initialised');
   } catch (err) {
     logger.error('There was an issue whilst initialising events.', err);
   }

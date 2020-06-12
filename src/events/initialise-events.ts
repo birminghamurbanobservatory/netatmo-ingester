@@ -4,7 +4,7 @@ import {withCorrelationId, getCorrelationId} from '../utils/correlator';
 
 export async function initialiseEvents(settings: {url: string; appName: string; logLevel: string}): Promise<void> {
 
-  logger.debug('Initalising events stream');
+  logger.debug('Initialising event stream');
 
   if (logIt('error', settings.logLevel)) {
     event.logsEmitter.on('error', (msg): void => {
