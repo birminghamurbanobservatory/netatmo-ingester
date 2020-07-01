@@ -57,7 +57,7 @@ logger.warn(`${appName} restarted`);
     logger.debug(`Running cronjob at ${new Date().toISOString()}`);
     try {
       const result = await ingestPublicData(config.netatmo.credentials, config.netatmo.region);
-      logger.info('Successfully ingested public netatmo data.', result);
+      logger.info(`Successfully ingested public netatmo data. (${result.nPublishedObservations} new obs)`, result);
     } catch (err) {
       logger.error('Failed to get Netatmo data', err);
     }
