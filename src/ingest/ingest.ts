@@ -1,6 +1,6 @@
 import {Credentials} from '../netatmo/credentials.class';
 import {Region} from '../netatmo/region.class';
-import {getAccessToken, getPublicData, getPublicDataWithRetries} from '../netatmo/netatmo.service';
+import {getAccessToken, getPublicDataWithRetries} from '../netatmo/netatmo.service';
 import * as logger from 'node-logger';
 import {calculateWindows} from '../netatmo/windows-calculator';
 import * as Promise from 'bluebird';
@@ -15,9 +15,17 @@ import * as event from 'event-stream';
 import {calculateRainRate} from '../utils/rain.service';
 import {subMinutes} from 'date-fns';
 import {kilometrePerHourToMetresPerSecond} from '../utils/wind.service';
+import {Result} from './result';
 
 
-export async function ingestPublicData(credentials: Credentials, region: Region): Promise<any> {
+export async function ingestPublicData(credentials: Credentials, region: Region): Promise<Result> {
+
+  const result: Result = {
+    nWindows: 0,
+    nDevicesInRegion: 0,
+    nPreviouslyUnseenDevices: 0,
+    nPublishedObservations: 0
+  };
 
   // Get access token
   const accessToken = await getAccessToken(credentials);
@@ -28,6 +36,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
   // Because the netatmo api will often exclude netatmo stations when there are many in a certain region or you are looking at a large spatial area, therefore its important run the getPublicData request over several smaller windows that together make up the full region of interest.
   const windows = calculateWindows(region);
   logger.debug(`Using ${windows.length} windows`);
+  result.nWindows = windows.length;
 
   await Promise.mapSeries(windows, async (window, wIdx) => {
 
@@ -41,8 +50,6 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
       lonSW: region.west
     });
 
-    // logger.debug(publicData);
-
     const reformatted: ReformattedDevicePublicData[] = reformatPublicData(publicData);
 
     // Exclude any outside of the window
@@ -53,6 +60,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
         device.location.lon <= window.east;
     });
 
+    result.nDevicesInRegion += devicesData.length;
 
     // Need to loop through each device individually, checking to see if we have a latest document for it, from which we can work out if any of the sensor observations are new. If so we'll need to update the document, potentially calculating the rain-accumulation and rain-rate from the daily_accumulation, then publish any new observations to the event stream.
     await Promise.mapSeries(devicesData, async (deviceData) => {
@@ -65,6 +73,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
       } catch (err) {
         if (err.name === 'LatestNotFound') {
           logger.debug(`deviceId '${deviceData.deviceId} does not have a latest document yet.'`);
+          result.nPreviouslyUnseenDevices += 1;
         } else {
           throw err;
         }
@@ -77,7 +86,6 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
         const {combinedLatest, updatedSensors} = combineNewDeviceDataWithExistingLatest(deviceData, existingLatest);
 
-
         const updatedLatest = await updateLatest(deviceData.deviceId, combinedLatest);
         // The observations should only be generated from new readings from the netatmo, therefore we need to remove any that weren't updated this time round.
         const latestUpdatedSensorsOnly = cloneDeep(updatedLatest);
@@ -87,7 +95,6 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
           }));
         });
         observations = latestToObservations(latestUpdatedSensorsOnly);
-
 
 
       //------------------------
@@ -106,12 +113,11 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
       // Publish the observation(s) to the event stream
       await Promise.mapSeries(observations, async (observation): Promise<void> => {
         await event.publish('observation.incoming', observation);
+        result.nPublishedObservations += 1;
       });
 
       
-
     });
-
 
     // In terms of keeping the Netatmo location up to date in the sensor-deployment-manager, it's probably worth updating the sensor-deployment-manager so that any sensor can update a platform's location, just so long as the observation has a location object. The trade-off of this approach as opposed to creating a fake netatmo location sensor is that you won't have a history of locations, but given how rarely netatmo's move this shouldn't be an issue.
 
@@ -122,6 +128,7 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
   });
 
+  return result;
 
 }
 
