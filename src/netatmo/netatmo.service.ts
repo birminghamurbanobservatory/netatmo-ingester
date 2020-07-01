@@ -105,7 +105,7 @@ export async function getPublicData(params: {accessToken: string; latNE: number;
 // }
 // With no obvious reason as to the cause. In postman I can make the request and it will work fine one moment, then return this error the next.
 // The following function adds a wrapper around the request, in order to keep retrying a set number of times.
-export async function getPublicDataWithRetries(params: any, nRetries = 5): Promise<any> {
+export async function getPublicDataWithRetries(params: any, nRetries = 5): Promise<{publicData: any; successfulOnAttempt: number}> {
 
   let attemptNumber = 1;
 
@@ -126,6 +126,6 @@ export async function getPublicDataWithRetries(params: any, nRetries = 5): Promi
     throw_original: true // to throw the last thrown error instance rather than a timeout error.
   });
 
-  return publicData;
+  return {publicData, successfulOnAttempt: attemptNumber};
 
 }

@@ -3,4 +3,5 @@ export interface Result {
   nDevicesInRegion: number;
   nPreviouslyUnseenDevices: number;
   nPublishedObservations: number;
+  publicDataRequests: any;
 }

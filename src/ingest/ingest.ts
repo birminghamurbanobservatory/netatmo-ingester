@@ -24,7 +24,8 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
     nWindows: 0,
     nDevicesInRegion: 0,
     nPreviouslyUnseenDevices: 0,
-    nPublishedObservations: 0
+    nPublishedObservations: 0,
+    publicDataRequests: {}
   };
 
   // Get access token
@@ -42,13 +43,20 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
     logger.debug(`Processing window ${wIdx + 1} of ${windows.length}.`);
 
-    const publicData = await getPublicDataWithRetries({
+    const {publicData, successfulOnAttempt} = await getPublicDataWithRetries({
       accessToken,
       latNE: region.north,
       latSW: region.south,
       lonNE: region.east,
       lonSW: region.west
     });
+
+    const key = `nSuccessfulOnAttempt${successfulOnAttempt}`;
+    if (result.publicDataRequests[key]) {
+      result.publicDataRequests[key] += 1;
+    } else {
+      result.publicDataRequests[key] = 1;
+    }
 
     const reformatted: ReformattedDevicePublicData[] = reformatPublicData(publicData);
 
