@@ -45,10 +45,10 @@ export async function ingestPublicData(credentials: Credentials, region: Region)
 
     const {publicData, successfulOnAttempt} = await getPublicDataWithRetries({
       accessToken,
-      latNE: region.north,
-      latSW: region.south,
-      lonNE: region.east,
-      lonSW: region.west
+      latNE: window.north,
+      latSW: window.south,
+      lonNE: window.east,
+      lonSW: window.west
     });
 
     const key = `nSuccessfulOnAttempt${successfulOnAttempt}`;
