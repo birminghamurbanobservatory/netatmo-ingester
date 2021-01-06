@@ -22,7 +22,7 @@
   "dependencies": {
     "@hapi/joi": "^17.1.0",
     "@types/lodash": "^4.14.149",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "bluebird": "^3.7.2",
     "bluebird-retry": "^0.11.0",
     "check-types": "^11.1.2",
